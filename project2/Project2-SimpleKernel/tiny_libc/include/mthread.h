@@ -31,17 +31,16 @@
 #include <stdatomic.h>
 
 /* on success, these functions return zero. Otherwise, return an error number */
-#define EBUSY  1 /* the lock is busy(for example, it is locked by another thread) */
+#define EBUSY 1  /* the lock is busy(for example, it is locked by another thread) */
 #define EINVAL 2 /* the lock is invalid */
 
 typedef struct mthread_mutex
 {
-    // TODO:
-    //pid_t id;
+    int lock_id;
 } mthread_mutex_t;
 
-int mthread_mutex_init(void* handle);
-int mthread_mutex_lock(void* handle);
-int mthread_mutex_unlock(void* handle);
+int mthread_mutex_init(void *handle);
+int mthread_mutex_lock(void *handle);
+int mthread_mutex_unlock(void *handle);
 
 #endif

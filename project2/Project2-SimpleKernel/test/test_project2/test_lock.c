@@ -13,7 +13,7 @@ static mthread_mutex_t mutex_lock;
 
 void lock_task1(void)
 {
-        int print_location = 3;
+        int print_location = 5;
         while (1)
         {
                 int i;
@@ -27,12 +27,12 @@ void lock_task1(void)
                 }
 
                 sys_move_cursor(1, print_location);
-                printk("%s", blank);
+                printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printk("> [TASK] Applying for a lock.\n");
-                
-                do_scheduler();
+                printf("> [TASK] Applying for a lock.\n");
+
+                sys_yield();
 
 #ifdef MUTEX_LOCK
                 mthread_mutex_lock(&mutex_lock);
@@ -41,26 +41,26 @@ void lock_task1(void)
                 for (i = 0; i < 20; i++)
                 {
                         sys_move_cursor(1, print_location);
-                        printk("> [TASK] Has acquired lock and running.(%d)\n", i);
-                        do_scheduler();
+                        printf("> [TASK] Has acquired lock and running.(%d)\n", i);
+                        sys_yield();
                 }
 
                 sys_move_cursor(1, print_location);
-                printk("%s", blank);
+                printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printk("> [TASK] Has acquired lock and exited.\n");
+                printf("> [TASK] Has acquired lock and exited.\n");
 
 #ifdef MUTEX_LOCK
                 mthread_mutex_unlock(&mutex_lock);
 #endif
-                do_scheduler();
+                sys_yield();
         }
 }
 
 void lock_task2(void)
 {
-        int print_location = 4;
+        int print_location = 6;
         while (1)
         {
                 int i;
@@ -74,12 +74,12 @@ void lock_task2(void)
                 }
 
                 sys_move_cursor(1, print_location);
-                printk("%s", blank);
+                printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printk("> [TASK] Applying for a lock.\n");
-                
-                do_scheduler();
+                printf("> [TASK] Applying for a lock.\n");
+
+                sys_yield();
 
 #ifdef MUTEX_LOCK
                 mthread_mutex_lock(&mutex_lock);
@@ -88,19 +88,19 @@ void lock_task2(void)
                 for (i = 0; i < 20; i++)
                 {
                         sys_move_cursor(1, print_location);
-                        printk("> [TASK] Has acquired lock and running.(%d)\n", i);
-                        do_scheduler();
+                        printf("> [TASK] Has acquired lock and running.(%d)\n", i);
+                        sys_yield();
                 }
 
                 sys_move_cursor(1, print_location);
-                printk("%s", blank);
+                printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printk("> [TASK] Has acquired lock and exited.\n");
+                printf("> [TASK] Has acquired lock and exited.\n");
 
 #ifdef MUTEX_LOCK
                 mthread_mutex_unlock(&mutex_lock);
 #endif
-                do_scheduler();
+                sys_yield();
         }
 }

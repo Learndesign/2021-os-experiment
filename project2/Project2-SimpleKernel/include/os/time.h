@@ -31,6 +31,11 @@
 #include <type.h>
 #include <os/list.h>
 
+typedef struct timer
+{
+    uint64_t timeout;
+} timer_t;
+
 extern uint32_t time_base;
 extern uint64_t time_elapsed;
 extern uint64_t MHZ;
@@ -41,5 +46,5 @@ uint64_t get_ticks(void);
 extern uint64_t get_time_base();
 
 void latency(uint64_t time);
-
+extern list_head sleep_queue;
 #endif

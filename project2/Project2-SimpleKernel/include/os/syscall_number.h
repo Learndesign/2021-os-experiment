@@ -33,6 +33,10 @@
 
 /* define */
 #define SYSCALL_SLEEP 2
+
+#define SYSCALL_LOCKCREATE 3
+#define SYSCALL_LOCKJION 4
+
 #define SYSCALL_YIELD 7
 
 #define SYSCALL_WRITE 20

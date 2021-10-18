@@ -30,7 +30,8 @@
 
 #include <os/list.h>
 
-typedef enum {
+typedef enum
+{
     UNLOCKED,
     LOCKED,
 } lock_status_t;
@@ -56,4 +57,10 @@ void do_mutex_lock_init(mutex_lock_t *lock);
 void do_mutex_lock_acquire(mutex_lock_t *lock);
 void do_mutex_lock_release(mutex_lock_t *lock);
 
+int lock_create(int key);
+int lock_jion(int lock_id, int op);
+#define NUM_MAX_USER 16
+#define USER_OP_LOCK 0
+#define USER_OP_UNLOCK 1
+extern mutex_lock_t user_lock[NUM_MAX_USER];
 #endif

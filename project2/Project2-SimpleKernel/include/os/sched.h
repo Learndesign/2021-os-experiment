@@ -32,6 +32,7 @@
 #include <type.h>
 #include <os/list.h>
 #include <os/mm.h>
+#include <os/time.h>
 
 #define NUM_MAX_TASK 16
 
@@ -55,21 +56,28 @@ typedef struct switchto_context
     reg_t regs[14];
 } switchto_context_t;
 
-typedef enum {
+typedef enum
+{
     TASK_BLOCKED,
     TASK_RUNNING,
     TASK_READY,
     TASK_EXITED,
 } task_status_t;
 
-typedef enum {
+typedef enum
+{
     KERNEL_PROCESS,
     KERNEL_THREAD,
     USER_PROCESS,
     USER_THREAD,
 } task_type_t;
-
-
+typedef enum
+{
+    Level_1,
+    Level_2,
+    Level_3,
+    Level_4,
+} priority_t;
 /* Process Control Block */
 typedef struct pcb
 {
@@ -97,15 +105,18 @@ typedef struct pcb
     /* cursor position */
     int cursor_x;
     int cursor_y;
-    
+
+    /* timer for sleep */
+    timer_t timer;
+
+    /* priority */
+    priority_t priority;
+
     /* name  */
-    //char name[16];
+    // char name[16];
 
     /*~zero  means killed */
-    //int killed;
-
-    /* priority for a current time os */
-    //priority_t priority;
+    // int killed;
 
 } pcb_t;
 
@@ -114,14 +125,14 @@ typedef struct task_info
 {
     ptr_t entry_point;
     task_type_t type;
-    //priority_t priority;
+    priority_t priority;
 } task_info_t;
 
 /* ready queue to run */
 extern list_head ready_queue;
 
 /* current running task PCB */
-extern pcb_t * volatile current_running;
+extern pcb_t *volatile current_running;
 extern pid_t process_id;
 
 extern pcb_t pcb[NUM_MAX_TASK];
@@ -131,7 +142,6 @@ extern const ptr_t pid0_stack;
 extern void switch_to(pcb_t *prev, pcb_t *next);
 void do_scheduler(void);
 void do_sleep(uint32_t);
-
 
 void do_block(list_node_t *, list_head *queue);
 void do_unblock(list_node_t *);

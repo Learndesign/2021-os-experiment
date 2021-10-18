@@ -1,22 +1,23 @@
 #include <stdatomic.h>
 #include <mthread.h>
 #include <sys/syscall.h>
+#include <os/lock.h>
 
 int mthread_mutex_init(void *handle)
 {
     /* TODO: */
-    do_mutex_lock_init(handle);
+    lock_create(handle);
     return 0;
 }
 int mthread_mutex_lock(void *handle)
 {
     /* TODO: */
-    do_mutex_lock_acquire(handle);
+    lock_jion(handle, USER_OP_LOCK);
     return 0;
 }
 int mthread_mutex_unlock(void *handle)
 {
     /* TODO: */
-    do_mutex_lock_release(handle);
+    lock_jion(handle, USER_OP_UNLOCK);
     return 0;
 }

@@ -81,7 +81,50 @@ _save_context:
 
 .macro RESTORE_CONTEXT
   /* TODO: Restore all registers and sepc,sstatus */
+  addi t0, sp, OFFSET_SIZE
+  sd  t0, PCB_KERNEL_SP   (tp)
+
+  ld   t0 ,OFFSET_REG_SSTATUS (sp)
+  csrw CSR_SSTATUS, t0       
+  ld   t0 ,OFFSET_REG_SEPC    (sp)
+  csrw CSR_SEPC   , t0 
+  
+  ld  zero,OFFSET_REG_ZERO(sp)
+  ld  ra  ,OFFSET_REG_RA  (sp)
+  ld  sp  ,OFFSET_REG_SP  (sp)
+  ld  gp  ,OFFSET_REG_GP  (sp)
+  ld  tp  ,OFFSET_REG_TP  (sp)
+
+  ld  t0  ,OFFSET_REG_T0  (sp)
+  ld  t1  ,OFFSET_REG_T1  (sp)
+  ld  t2  ,OFFSET_REG_T2  (sp)
+  ld  s0  ,OFFSET_REG_S0  (sp)
+  ld  s1  ,OFFSET_REG_S1  (sp)
+  ld  a0  ,OFFSET_REG_A0  (sp)
+  ld  a1  ,OFFSET_REG_A1  (sp)
+  ld  a2  ,OFFSET_REG_A2  (sp)
+  ld  a3  ,OFFSET_REG_A3  (sp)
+  ld  a4  ,OFFSET_REG_A4  (sp)
+  ld  a5  ,OFFSET_REG_A5  (sp)
+  ld  a6  ,OFFSET_REG_A6  (sp)
+  ld  a7  ,OFFSET_REG_A7  (sp)
+
+  ld  s2  ,OFFSET_REG_S2  (sp)
+  ld  s3  ,OFFSET_REG_S3  (sp)
+  ld  s4  ,OFFSET_REG_S4  (sp)
+  ld  s5  ,OFFSET_REG_S5  (sp)
+  ld  s6  ,OFFSET_REG_S6  (sp)
+  ld  s7  ,OFFSET_REG_S7  (sp)
+  ld  s8  ,OFFSET_REG_S8  (sp)
+  ld  s9  ,OFFSET_REG_S9  (sp)
+  ld  s10 ,OFFSET_REG_S10 (sp)
+  ld  s11 ,OFFSET_REG_S11 (sp)
+  ld  t3  ,OFFSET_REG_T3  (sp)
+  ld  t4  ,OFFSET_REG_T4  (sp)
+  ld  t5  ,OFFSET_REG_T5  (sp)
+  ld  t6  ,OFFSET_REG_T6  (sp) 
 .endm
+
 
 ENTRY(enable_preempt)
   ld t1, current_running
@@ -168,6 +211,9 @@ ENDPROC(switch_to)
 
 ENTRY(ret_from_exception)
   /* TODO: */
+  RESTORE_CONTEXT
+  csrw CSR_SSCRATCH, tp
+  sret
 ENDPROC(ret_from_exception)
 
 ENTRY(exception_handler_entry)
@@ -185,7 +231,13 @@ ENTRY(exception_handler_entry)
    * so that we can return to ret_from_exception
    * when interrupt_help complete.
    */
-
+  ld a0, PCB_KERNEL_SP(tp)
+  addi a0, a0, SWITCH_TO_SIZE
+  csrr a1, CSR_STVAL
+  csrr a2, CSR_SCAUSE
+  call interrupt_helper
+  la ra, ret_from_exception 
+  jr ra
   /* TODO: call interrupt_helper
    * note: don't forget to pass parameters for it.
    */

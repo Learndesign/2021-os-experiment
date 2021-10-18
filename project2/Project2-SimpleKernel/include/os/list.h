@@ -47,7 +47,6 @@ typedef struct list_node
 
 typedef list_node_t list_head;
 
-
 // LIST_HEAD is used to define the head of a list.
 #define LIST_HEAD(name) struct list_node name = {&(name), &(name)}
 
@@ -76,8 +75,8 @@ static inline void list_del(list_node_t *node)
     node->next = NULL;
 }
 
-static inline list_node_t * get_head_node(list_head *head)
-{   
+static inline list_node_t *get_head_node(list_head *head)
+{
     list_node_t *temp = head->next;
     list_del(head->next);
     return temp;
