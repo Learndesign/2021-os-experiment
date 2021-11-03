@@ -39,8 +39,8 @@ typedef struct mthread_mutex
     int lock_id;
 } mthread_mutex_t;
 
-int mthread_mutex_init(void *handle);
-int mthread_mutex_lock(void *handle);
-int mthread_mutex_unlock(void *handle);
+int mthread_mutex_init(mthread_mutex_t *handle);
+int mthread_mutex_lock(mthread_mutex_t *handle);
+int mthread_mutex_unlock(mthread_mutex_t *handle);
 
 #endif

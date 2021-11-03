@@ -36,16 +36,34 @@ typedef enum
     LOCKED,
 } lock_status_t;
 
+typedef enum
+{
+    USED,
+    UNSED,
+} user_lock_status_t;
+
 typedef struct spin_lock
 {
     volatile lock_status_t status;
 } spin_lock_t;
+
+typedef struct user_spin_lock
+{
+    volatile user_lock_status_t status;
+} user_spin_lock_t;
 
 typedef struct mutex_lock
 {
     spin_lock_t lock;
     list_head block_queue;
 } mutex_lock_t;
+
+typedef struct user_lock
+{
+    user_spin_lock_t lock;
+    mutex_lock_t kernel_lock;
+    int id;
+} user_lock_t;
 
 /* init lock */
 void spin_lock_init(spin_lock_t *lock);
@@ -56,11 +74,10 @@ void spin_lock_release(spin_lock_t *lock);
 void do_mutex_lock_init(mutex_lock_t *lock);
 void do_mutex_lock_acquire(mutex_lock_t *lock);
 void do_mutex_lock_release(mutex_lock_t *lock);
-
-int lock_create(int key);
-int lock_jion(int lock_id, int op);
+void init_user_lock_array();
+int lock_create();
+void lock_jion(int lock_id, int op);
 #define NUM_MAX_USER 16
 #define USER_OP_LOCK 0
 #define USER_OP_UNLOCK 1
-extern mutex_lock_t user_lock[NUM_MAX_USER];
 #endif

@@ -30,6 +30,12 @@ uint64_t get_time_base()
     return time_base;
 }
 
+uint64_t get_wall_time(uint32_t *time_elapsed)
+{
+    *time_elapsed = get_ticks();
+    return time_base;
+};
+
 //延迟时间
 void latency(uint64_t time)
 {
@@ -42,7 +48,6 @@ void latency(uint64_t time)
 
 void timer_check()
 {
-    disable_preempt();
     list_node_t *ptr = sleep_queue.next;
     //队列非空就遍历寻找到时间的点
     while (!list_empty(&sleep_queue) && (ptr != &sleep_queue))
@@ -51,8 +56,11 @@ void timer_check()
         list_node_t *sleep_list = get_head_node(&sleep_queue);
         pcb_t *temp = (pcb_t *)((reg_t *)sleep_list - 3);
         if (get_timer() >= temp->timer.timeout)
+        {
             do_unblock(&temp->list);
+            list_del(sleep_list);
+        }
+        do_unblock(&temp->list);
         ptr = ptr->next;
     }
-    enable_preempt();
 }

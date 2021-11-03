@@ -35,6 +35,7 @@
 #include <os/time.h>
 
 #define NUM_MAX_TASK 16
+extern void ret_from_exception();
 
 /* used to save register infomation */
 typedef struct regs_context
@@ -71,13 +72,6 @@ typedef enum
     USER_PROCESS,
     USER_THREAD,
 } task_type_t;
-typedef enum
-{
-    Level_1,
-    Level_2,
-    Level_3,
-    Level_4,
-} priority_t;
 /* Process Control Block */
 typedef struct pcb
 {
@@ -102,15 +96,19 @@ typedef struct pcb
     /* BLOCK | READY | RUNNING */
     task_status_t status;
 
+    /*base address of context*/
+    regs_context_t *save_context;
+    switchto_context_t *switch_context;
+
     /* cursor position */
     int cursor_x;
     int cursor_y;
 
+    /*origin define priority*/
+    priority_t prepriority;
+
     /* timer for sleep */
     timer_t timer;
-
-    /* priority */
-    priority_t priority;
 
     /* name  */
     // char name[16];
@@ -145,5 +143,9 @@ void do_sleep(uint32_t);
 
 void do_block(list_node_t *, list_head *queue);
 void do_unblock(list_node_t *);
+void do_priori(int priori, int pcb_id);
+int do_get_id();
+int do_get_priorit();
+int do_fork();
 
 #endif

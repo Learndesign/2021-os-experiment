@@ -2,9 +2,9 @@ HOST_CC = gcc
 CROSS_PREFIX = riscv64-unknown-linux-gnu-
 CC = ${CROSS_PREFIX}gcc
 OBJDUMP = ${CROSS_PREFIX}objdump
-CFLAGS = -O0  -fno-builtin -nostdlib -T riscv.lds -Wall -mcmodel=medany -Iinclude -Idrivers -Itest -Itest/test_project2 -Itiny_libc/include -nostdinc -g
+CFLAGS = -O0  -fno-builtin -nostdlib -T riscv.lds     -mcmodel=medany -Iinclude -Idrivers -Itest -Itest/test_project2 -Itiny_libc/include -nostdinc -g
 DISK = /dev/sdb
-
+#-WALL
 BOOTLOADER_ENTRYPOINT = 0x50200000
 KERNEL_ENTRYPOINT = 0x50201000
 
@@ -23,10 +23,10 @@ SRC_MM	= ./kernel/mm/mm.c
 SRC_SYSCALL	= ./kernel/syscall/syscall.c
 SRC_LIBS	= ./libs/string.c ./libs/printk.c
 
-SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tiny_libc/syscall.c ./tiny_libc/syscall.S ./tiny_libc/time.c
+SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tiny_libc/syscall.c ./tiny_libc/syscall.S ./tiny_libc/time.c ./tiny_libc/sys_fork.S
 
 SRC_TEST	= ./test/test.c
-SRC_TEST2	= ./test/test_project2/test_scheduler.c ./test/test_project2/test_sleep.c ./test/test_project2/test_timer.c ./test/test_project2/test_lock.c
+SRC_TEST2	= ./test/test_project2/test_scheduler.c ./test/test_project2/test_sleep.c ./test/test_project2/test_timer.c ./test/test_project2/test_lock.c ./test/test_project2/test_fork.c
 
 SRC_MAIN	= ${SRC_ARCH} ${SRC_INIT} ${SRC_INT} ${SRC_DRIVER} ${SRC_LOCK} ${SRC_SCHED} ${SRC_MM} ${SRC_SYSCALL} ${SRC_LIBS} ${SRC_LIBC} ${SRC_TEST} ${SRC_TEST2}
 
@@ -43,7 +43,7 @@ main: $(SRC_MAIN) riscv.lds
 	${CC} ${CFLAGS} -o main $(SRC_MAIN) -Ttext=${KERNEL_ENTRYPOINT}
 
 createimage: $(SRC_IMAGE)
-	${HOST_CC} ${SRC_IMAGE} -o createimage -ggdb -Wall
+	${HOST_CC} ${SRC_IMAGE} -o createimage -ggdb # -Wall
 
 image: bootblock main createimage
 	./createimage --extended bootblock main

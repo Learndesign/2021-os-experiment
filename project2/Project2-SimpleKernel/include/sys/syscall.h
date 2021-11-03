@@ -35,11 +35,24 @@ extern long invoke_syscall(long, long, long, long);
 
 void sys_sleep(uint32_t);
 
+char sys_read();
 void sys_write(char *);
 void sys_move_cursor(int, int);
 void sys_reflush();
 
+int sys_get_id();
+int sys_get_priorit();
+
+int sys_lock_init();
+void sys_lock_jion(int lock_id, int op);
+
 long sys_get_timebase();
 long sys_get_tick();
+
+int sys_get_id();
+int sys_get_priorit();
+void sys_priority(int priority, int pcb_id);
+
+uint32_t sys_get_wall_time(uint32_t *time_elapsed);
 
 #endif

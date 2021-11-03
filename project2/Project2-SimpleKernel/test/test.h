@@ -44,4 +44,6 @@ extern int num_sched2_tasks;
 extern struct task_info *lock2_tasks[16];
 extern int num_lock2_tasks;
 
+extern struct task_info *fork_tasks[16];
+extern int num_fork_tasks;
 #endif

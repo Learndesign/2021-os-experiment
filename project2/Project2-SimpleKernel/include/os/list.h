@@ -43,6 +43,7 @@
 typedef struct list_node
 {
     struct list_node *next, *prev;
+    priority_t priority;
 } list_node_t;
 
 typedef list_node_t list_head;
@@ -54,6 +55,7 @@ static inline void init_list_head(list_head *list)
 {
     list->next = list;
     list->prev = list;
+    list->priority = 0;
 }
 
 static inline void list_add(list_node_t *node, list_node_t *head)
@@ -78,13 +80,42 @@ static inline void list_del(list_node_t *node)
 static inline list_node_t *get_head_node(list_head *head)
 {
     list_node_t *temp = head->next;
-    list_del(head->next);
     return temp;
 }
 
 static inline int list_empty(list_head *head)
 {
     return head->next == head;
+}
+
+static inline void list_add_node(list_node_t *node, list_node_t *prev, list_node_t *next)
+{
+    next->prev = node;
+    node->next = next;
+    node->prev = prev;
+    prev->next = node;
+}
+
+static inline void list_add_priority(list_node_t *node, list_node_t *head)
+{
+    list_node_t *tail_node = head->prev;
+    list_node_t *sort_node = head;
+    if (head->next == head)
+    {
+        list_add_node(node, tail_node, head);
+        return;
+    }
+    while (tail_node != head)
+    {
+        if (node->priority <= tail_node->priority)
+        {
+            list_add_node(node, tail_node, sort_node);
+            return;
+        }
+        tail_node = tail_node->prev;
+        sort_node = sort_node->prev;
+    }
+    list_add_node(node, head, head->next);
 }
 
 #endif

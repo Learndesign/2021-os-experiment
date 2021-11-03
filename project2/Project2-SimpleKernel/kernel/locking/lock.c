@@ -1,7 +1,7 @@
 #include <os/lock.h>
 #include <os/sched.h>
 #include <atomic.h>
-
+user_lock_t user_lock_array[NUM_MAX_USER];
 void do_mutex_lock_init(mutex_lock_t *lock)
 {
     /* TODO */
@@ -33,18 +33,32 @@ void do_mutex_lock_release(mutex_lock_t *lock)
         lock->lock.status = UNLOCKED;
 }
 
-int lock_create(int key)
+void init_user_lock_array()
 {
-    int id = key % 16;
-    return id;
+    for (int i = 0; i < NUM_MAX_USER; i++)
+    {
+        user_lock_array[i].lock.status = UNSED;
+        user_lock_array[i].id = i + 1;
+    }
 }
 
-int lock_jion(int lock_id, int op)
+int lock_create()
 {
-    mutex_lock_t *lock = &user_lock[lock_id];
-    if (op == 0)
-        do_mutex_lock_acquire(lock);
-    else if (op == 1)
-        do_mutex_lock_release(lock);
-    return 1;
+    for (int i = 0; i < NUM_MAX_USER; i++)
+    {
+        if (user_lock_array[i].kernel_lock.lock.status != LOCKED && user_lock_array[i].lock.status != USED)
+        {
+            user_lock_array[i].lock.status = USED;
+            do_mutex_lock_init(&user_lock_array[i].kernel_lock);
+            return i;
+        }
+    }
+}
+
+void lock_jion(int lock_id, int op)
+{
+    if (op == USER_OP_LOCK)
+        do_mutex_lock_acquire(&user_lock_array[lock_id].kernel_lock);
+    else
+        do_mutex_lock_release(&user_lock_array[lock_id].kernel_lock);
 }

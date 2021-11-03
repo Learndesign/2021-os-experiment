@@ -40,7 +40,6 @@
 
 extern void ret_from_exception();
 extern void __global_pointer$();
-mutex_lock_t user_lock[NUM_MAX_USER];
 
 static void init_pcb_stack(
     ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_point,
@@ -48,155 +47,170 @@ static void init_pcb_stack(
 {
     regs_context_t *pt_regs =
         (regs_context_t *)(kernel_stack - sizeof(regs_context_t));
-
-    /* TODO: initialization registers
-     * note: sp, gp, ra, sepc, sstatus
-     * gp should be __global_pointer$
-     * To run the task in user mode,
-     * you should set corresponding bits of sstatus(SPP, SPIE, etc.).
-     */
-    pt_regs->regs[1] = entry_point;
-    pt_regs->regs[2] = kernel_stack - sizeof(regs_context_t) - sizeof(switchto_context_t);
-    pt_regs->regs[3] = __global_pointer$; // ra
+    pcb->save_context = pt_regs;
+    pt_regs->regs[2] = user_stack;
+    pt_regs->regs[3] = (reg_t)__global_pointer$;
+    pt_regs->regs[4] = (reg_t)pcb;
     pt_regs->sepc = entry_point;
     pt_regs->sstatus = 0;
     pt_regs->scause = 0;
     pt_regs->sbadaddr = 0;
-
-    // set sp to simulate return from switch_to
-    /* TODO: you should prepare a stack, and push some values to
-     * simulate a pcb context.
-     */
-    switchto_context_t *st_regs = (switchto_context_t *)(kernel_stack - sizeof(regs_context_t) - sizeof(switchto_context_t));
-    st_regs->regs[0] = entry_point;
-    st_regs->regs[1] = kernel_stack - sizeof(regs_context_t) - sizeof(switchto_context_t);
-
-    // recover sp location to help to_swich to work
+    for (int i = 5; i < 32; i++)
+    {
+        pt_regs->regs[i] = 0;
+    }
     pcb->kernel_sp = kernel_stack - sizeof(regs_context_t) - sizeof(switchto_context_t);
+    switchto_context_t *st_regs = (switchto_context_t *)pcb->kernel_sp;
+    pcb->switch_context = st_regs;
+    pcb->user_sp = user_stack;
+    st_regs->regs[0] = pcb->type == USER_PROCESS || pcb->type == USER_THREAD ? (reg_t)&ret_from_exception : entry_point;
+    st_regs->regs[1] = user_stack;
+    for (int i = 2; i < 14; i++)
+    {
+        st_regs->regs[i] = 0;
+    }
 }
-
+#define TASK5
 static void init_pcb()
 {
     /* initialize all of your pcb and add them into ready_queue
      * TODO:
      */
     int task3_total_number = num_timer_tasks + num_sched2_tasks;
+    int task4_total_number = num_sched2_tasks + num_lock2_tasks;
     int task_total_number = num_timer_tasks + num_sched2_tasks + num_lock2_tasks;
-    pid_t process_id = 1;
-    for (int i = 0; i < task_total_number; i++)
+    task_info_t *task;
+
+#ifdef TASK3
+    for (int i = 0; i < task3_total_number; i++)
     {
-        // sp in the top of stack
-        pcb[i].kernel_sp = allocPage(1) + PAGE_SIZE;
-        pcb[i].user_sp = allocPage(1) + PAGE_SIZE;
-
-        pcb[i].preempt_count = 0;
-
-        pcb[i].pid = process_id++;
-
-        pcb[i].type = sched1_tasks[i]->type;
-
-        pcb[i].status = TASK_READY;
-
-        pcb[i].cursor_x = 0;
-        pcb[i].cursor_y = 0;
-
         if (i < num_timer_tasks)
+            task = timer_tasks[i];
+        else if (i < task4_total_number)
+            task = sched2_tasks[i - num_timer_tasks];
+#endif
+#ifdef TASK4
+        for (int i = 0; i < task4_total_number; i++)
         {
-            pcb[i].priority = timer_tasks[i]->priority;
-            init_pcb_stack(pcb[i].kernel_sp, pcb[i].user_sp,
-                           timer_tasks[i]->entry_point, &pcb[i]);
-        }
-        else if (i < task3_total_number)
-        {
-            pcb[i].priority = sched2_tasks[i - num_timer_tasks]->priority;
-            init_pcb_stack(pcb[i].kernel_sp, pcb[i].user_sp,
-                           sched2_tasks[i - num_timer_tasks]->entry_point, &pcb[i]);
-        }
+            if (i < num_sched2_tasks)
+                task = sched2_tasks[i];
+            else if (i < task4_total_number)
+                task = lock2_tasks[i - num_sched2_tasks];
+#endif
+#ifdef TASKP2
+            for (int i = 0; i < task_total_number; i++)
+            {
+                if (i < num_timer_tasks)
+                    task = timer_tasks[i];
+                else if (i < task3_total_number)
+                    task = sched2_tasks[i - num_timer_tasks];
+                else if (i < task_total_number)
+                    task = lock2_tasks[i - task3_total_number];
+#endif
+#ifdef TASK5
+                for (int i = 0; i < num_fork_tasks; i++)
+                {
+                    task = fork_tasks[i];
+#endif
 
-        else if (i < task_total_number)
-        {
-            pcb[i].priority = lock2_tasks[i - task3_total_number]->priority;
-            init_pcb_stack(pcb[i].kernel_sp, pcb[i].user_sp,
-                           lock2_tasks[i - task3_total_number]->entry_point, &pcb[i]);
-        }
+                    pcb[i].list.priority = task->priority;
+                    pcb[i].prepriority = task->priority;
+                    pcb[i].kernel_sp = allocPage(1);
+                    pcb[i].user_sp = allocPage(1);
 
-        list_add(&pcb[i].list, &ready_queue);
-    }
-    /* remember to initialize `current_running`
+                    pcb[i].preempt_count = 0;
+
+                    pcb[i].pid = process_id++;
+
+                    pcb[i].type = task->type;
+
+                    pcb[i].status = TASK_READY;
+
+                    pcb[i].cursor_x = 0;
+                    pcb[i].cursor_y = 0;
+                    init_pcb_stack(pcb[i].kernel_sp, pcb[i].user_sp, task->entry_point, &pcb[i]);
+                    list_add_priority(&pcb[i].list, &ready_queue);
+                }
+                /* remember to initialize `current_running`
      * TODO:
      */
-    current_running = &pid0_pcb;
-}
+                current_running = &pid0_pcb;
+                printk("> [INIT] everything open.\n\r");
+            }
 
-void syscall_exit(void)
-{
-    printk("> [ERROR]: Syscall not exist \n");
-    while (1)
-        ;
-}
+            void syscall_exit(void)
+            {
+                printk("> [ERROR]: Syscall not exist \n");
+                while (1)
+                    ;
+            }
 
-//初始化系统调用的数组
-static void init_syscall(void)
-{
-    // initialize system call table.
-    for (int i = 0; i < NUM_SYSCALLS; i++)
-        syscall[i] = &syscall_exit;
-    syscall[SYSCALL_SLEEP] = &do_sleep;
+            //初始化系统调用的数组
+            static void init_syscall(void)
+            {
+                // initialize system call table.
+                for (int i = 0; i < NUM_SYSCALLS; i++)
+                    syscall[i] = &syscall_exit;
+                syscall[SYSCALL_SLEEP] = &do_sleep;
 
-    syscall[SYSCALL_LOCKCREATE] = &lock_create;
-    syscall[SYSCALL_LOCKJION] = &lock_jion;
+                syscall[SYSCALL_LOCKCREATE] = &lock_create;
+                syscall[SYSCALL_LOCKJION] = &lock_jion;
+                syscall[SYSCALL_FORK] = &do_fork;
+                syscall[SYSCALL_GET_ID] = &do_get_id;
+                syscall[SYSCALL_PRIORIT] = &do_priori;
+                syscall[SYSCALL_GET_PRIORIT] = &do_get_priorit;
+                syscall[SYSCALL_YIELD] = &do_scheduler;
 
-    syscall[SYSCALL_YIELD] = &do_scheduler;
+                syscall[SYSCALL_WRITE] = &screen_write;
+                syscall[SYSCALL_READ] = &sbi_console_getchar;
+                syscall[SYSCALL_CURSOR] = &screen_move_cursor;
+                syscall[SYSCALL_REFLUSH] = &screen_reflush;
 
-    syscall[SYSCALL_WRITE] = &screen_write;
-    syscall[SYSCALL_READ] = &sbi_console_getchar;
-    syscall[SYSCALL_CURSOR] = &screen_move_cursor;
-    syscall[SYSCALL_REFLUSH] = &screen_reflush;
+                syscall[SYSCALL_GET_TIMEBASE] = &get_time_base;
+                syscall[SYSCALL_GET_TICK] = &get_ticks;
+                syscall[SYSCALL_GET_WALL_TIME] = &get_wall_time;
+            }
 
-    syscall[SYSCALL_GET_TIMEBASE] = &get_time_base;
-    syscall[SYSCALL_GET_TICK] = &get_ticks;
-}
+            // jump from bootloader.
+            // The beginning of everything >_< ~~~~~~~~~~~~~~
+            int main()
+            {
+                // init Process Control Block (-_-!)
+                init_pcb();
+                printk("> [INIT] PCB initialization succeeded.\n\r");
 
+                // read CPU frequency
+                time_base = sbi_read_fdt(TIMEBASE);
 
-// jump from bootloader.
-// The beginning of everything >_< ~~~~~~~~~~~~~~
-int main()
-{
-    // init Process Control Block (-_-!)
-    printk("> [INIT] everything open.\n\r");
-    init_pcb();
-    printk("> [INIT] PCB initialization succeeded.\n\r");
+                // init interrupt (^_^)
+                init_exception();
+                printk("> [INIT] Interrupt processing initialization succeeded.\n\r");
 
-    // read CPU frequency
-    time_base = sbi_read_fdt(TIMEBASE);
+                // init system call table (0_0)
+                init_syscall();
+                printk("> [INIT] System call initialized successfully.\n\r");
 
-    // init interrupt (^_^)
-    init_exception();
-    printk("> [INIT] Interrupt processing initialization succeeded.\n\r");
+                // fdt_print(riscv_dtb);
 
-    // init system call table (0_0)
-    init_syscall();
-    printk("> [INIT] System call initialized successfully.\n\r");
+                // init screen (QAQ)
+                init_screen();
+                printk("> [INIT] SCREEN initialization succeeded.\n\r");
 
-    // fdt_print(riscv_dtb);
-
-    // init screen (QAQ)
-    init_screen();
-    printk("> [INIT] SCREEN initialization succeeded.\n\r");
-
-    // TODO:
-    // Setup timer interrupt and enable all interrupt
-
-    while (1)
-    {
-        // (QAQQQQQQQQQQQ)
-        // If you do non-preemptive scheduling, you need to use it
-        // to surrender control do_scheduler();
-        // enable_interrupt();
-        // __asm__ __volatile__("wfi\n\r":::);
-        printk("> [CHANGE] change open\n\r");
-        do_scheduler();
-        printk("> [CHANGE] change si succeeded\n\r");
-    };
-    return 0;
-}
+                // init lock_array
+                init_user_lock_array();
+                printk("> [INIT] USER_LOCK_ARRAY initialization succeeded.\n\r");
+                // TODO:
+                // Setup timer interrupt and enable all interrupt
+                reset_irq_timer();
+                while (1)
+                {
+                    // (QAQQQQQQQQQQQ)
+                    // If you do non-preemptive scheduling, you need to use it
+                    // to surrender control do_scheduler();
+                    enable_interrupt();
+                    __asm__ __volatile__("wfi\n\r" ::
+                                             :);
+                    //do_scheduler();
+                };
+                return 0;
+            }

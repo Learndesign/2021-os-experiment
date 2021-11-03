@@ -17,9 +17,8 @@ void reset_irq_timer()
     // TODO clock interrupt handler.
     // TODO: call following functions when task4
     screen_reflush();
-    timer_check();
     // note: use sbi_set_timer
-    sbi_set_timer(get_ticks() + TIMER_INTERVAL);
+    sbi_set_timer(get_ticks() + time_base / 10);
     // remember to reschedule
     do_scheduler();
 }
@@ -29,9 +28,9 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
     // TODO interrupt handler.
     // call corresponding handler by the value of `cause`
     if (cause >> 63)
-        exc_table[cause](regs, stval, cause);
+        irq_table[cause](regs, stval, cause);
     else
-        irq_table[cause & ~SCAUSE_IRQ_FLAG](regs, stval, cause);
+        exc_table[cause & ~SCAUSE_IRQ_FLAG](regs, stval, cause);
 }
 
 void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause)

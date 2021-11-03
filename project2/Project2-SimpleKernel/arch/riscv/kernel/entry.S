@@ -19,14 +19,11 @@ _restore_kernel_tpsp:
 _save_context:
   sd sp, PCB_USER_SP(tp)
   ld sp, PCB_KERNEL_SP(tp)
-  addi sp, sp, -(OFFSET_SIZE)
+  addi sp, sp, SWITCH_TO_SIZE
 
   /* TODO: save all general purpose registers here! */
-  sd  zero,OFFSET_REG_ZERO(sp)
   sd  ra  ,OFFSET_REG_RA  (sp)
-  sd  sp  ,OFFSET_REG_SP  (sp)
   sd  gp  ,OFFSET_REG_GP  (sp)
-  sd  tp  ,OFFSET_REG_TP  (sp)
 
   sd  t0  ,OFFSET_REG_T0  (sp)
   sd  t1  ,OFFSET_REG_T1  (sp)
@@ -66,6 +63,9 @@ _save_context:
    * Disable the FPU to detect illegal usage of floating point in kernel
    * space.
    */
+  ld t0, PCB_USER_SP(tp)
+  sd t0, OFFSET_REG_SP  (sp)
+
   li t0, SR_SUM | SR_FS
 
   /* TODO: save sstatus, sepc, stval, scause and sscratch on user stack */
@@ -77,29 +77,31 @@ _save_context:
   sd   t0 ,OFFSET_REG_SBADADDR(sp)
   csrr t0 ,CSR_SCAUSE
   sd   t0 ,OFFSET_REG_SCAUSE  (sp)
+  csrr t0 ,CSR_SSCRATCH
+  sd   t0 ,OFFSET_REG_TP      (sp)
+  addi sp, sp, -(SWITCH_TO_SIZE)
 .endm
 
 .macro RESTORE_CONTEXT
   /* TODO: Restore all registers and sepc,sstatus */
-  addi t0, sp, OFFSET_SIZE
-  sd  t0, PCB_KERNEL_SP   (tp)
-
+  // Restore Supervisor-Level regs
+  ld   sp, PCB_KERNEL_SP(tp)
+  addi sp, sp, SWITCH_TO_SIZE
   ld   t0 ,OFFSET_REG_SSTATUS (sp)
   csrw CSR_SSTATUS, t0       
   ld   t0 ,OFFSET_REG_SEPC    (sp)
   csrw CSR_SEPC   , t0 
-  
-  ld  zero,OFFSET_REG_ZERO(sp)
+
   ld  ra  ,OFFSET_REG_RA  (sp)
-  ld  sp  ,OFFSET_REG_SP  (sp)
   ld  gp  ,OFFSET_REG_GP  (sp)
-  ld  tp  ,OFFSET_REG_TP  (sp)
 
   ld  t0  ,OFFSET_REG_T0  (sp)
   ld  t1  ,OFFSET_REG_T1  (sp)
   ld  t2  ,OFFSET_REG_T2  (sp)
+
   ld  s0  ,OFFSET_REG_S0  (sp)
   ld  s1  ,OFFSET_REG_S1  (sp)
+
   ld  a0  ,OFFSET_REG_A0  (sp)
   ld  a1  ,OFFSET_REG_A1  (sp)
   ld  a2  ,OFFSET_REG_A2  (sp)
@@ -119,12 +121,15 @@ _save_context:
   ld  s9  ,OFFSET_REG_S9  (sp)
   ld  s10 ,OFFSET_REG_S10 (sp)
   ld  s11 ,OFFSET_REG_S11 (sp)
+
   ld  t3  ,OFFSET_REG_T3  (sp)
   ld  t4  ,OFFSET_REG_T4  (sp)
   ld  t5  ,OFFSET_REG_T5  (sp)
   ld  t6  ,OFFSET_REG_T6  (sp) 
-.endm
 
+  ld  tp  ,OFFSET_REG_TP  (sp)
+  ld  sp  ,OFFSET_REG_SP  (sp)
+.endm
 
 ENTRY(enable_preempt)
   ld t1, current_running
@@ -167,45 +172,43 @@ ENTRY(switch_to)
   // save all callee save registers on kernel stack
   /* TODO: store all callee save registers,
    * see the definition of `struct switchto_context` in sched.h*/
-  addi sp, sp, -(SWITCH_TO_SIZE)
-  sd ra ,SWITCH_TO_RA (sp)
-  sd sp ,SWITCH_TO_SP (sp)
-  
-  sd s0 ,SWITCH_TO_S0 (sp)
-  sd s1 ,SWITCH_TO_S1 (sp)
-  sd s2 ,SWITCH_TO_S2 (sp)
-  sd s3 ,SWITCH_TO_S3 (sp)
-  sd s4 ,SWITCH_TO_S4 (sp)
-  sd s5 ,SWITCH_TO_S5 (sp)
-  sd s6 ,SWITCH_TO_S6 (sp)
-  sd s7 ,SWITCH_TO_S7 (sp)
-  sd s8 ,SWITCH_TO_S8 (sp)
-  sd s9 ,SWITCH_TO_S9 (sp)
-  sd s10,SWITCH_TO_S10(sp)
-  sd s11,SWITCH_TO_S11(sp)
-  
-  sd sp ,(a0)
+  ld t0, PCB_KERNEL_SP(a0)
+  sd sp, SWITCH_TO_SP(t0)
+  ld sp , PCB_KERNEL_SP(a0)
+
+  sd ra , SWITCH_TO_RA (sp)
+  sd s0 , SWITCH_TO_S0 (sp)
+  sd s1 , SWITCH_TO_S1 (sp)
+  sd s2 , SWITCH_TO_S2 (sp)
+  sd s3 , SWITCH_TO_S3 (sp)
+  sd s4 , SWITCH_TO_S4 (sp)
+  sd s5 , SWITCH_TO_S5 (sp)
+  sd s6 , SWITCH_TO_S6 (sp)
+  sd s7 , SWITCH_TO_S7 (sp)
+  sd s8 , SWITCH_TO_S8 (sp)
+  sd s9 , SWITCH_TO_S9 (sp)
+  sd s10, SWITCH_TO_S10(sp)
+  sd s11, SWITCH_TO_S11(sp)
 
   // restore next
   /* TODO: restore all callee save registers,
    * see the definition of `struct switchto_context` in sched.h*/
-  ld sp ,(a1)
-
-  ld ra ,SWITCH_TO_RA (sp)
-  ld s0 ,SWITCH_TO_S0 (sp)
-  ld s1 ,SWITCH_TO_S1 (sp)
-  ld s2 ,SWITCH_TO_S2 (sp)
-  ld s3 ,SWITCH_TO_S3 (sp)
-  ld s4 ,SWITCH_TO_S4 (sp)
-  ld s5 ,SWITCH_TO_S5 (sp)
-  ld s6 ,SWITCH_TO_S6 (sp)
-  ld s7 ,SWITCH_TO_S7 (sp)
-  ld s8 ,SWITCH_TO_S8 (sp)
-  ld s9 ,SWITCH_TO_S9 (sp)
-  ld s10,SWITCH_TO_S10(sp)
-  ld s11,SWITCH_TO_S11(sp)
-
-  addi sp, sp, SWITCH_TO_SIZE
+  ld sp , PCB_KERNEL_SP(a1)
+  ld ra , SWITCH_TO_RA (sp)
+  ld s0 , SWITCH_TO_S0 (sp)
+  ld s1 , SWITCH_TO_S1 (sp)
+  ld s2 , SWITCH_TO_S2 (sp)
+  ld s3 , SWITCH_TO_S3 (sp)
+  ld s4 , SWITCH_TO_S4 (sp)
+  ld s5 , SWITCH_TO_S5 (sp)
+  ld s6 , SWITCH_TO_S6 (sp)
+  ld s7 , SWITCH_TO_S7 (sp)
+  ld s8 , SWITCH_TO_S8 (sp)
+  ld s9 , SWITCH_TO_S9 (sp)
+  ld s10, SWITCH_TO_S10(sp)
+  ld s11, SWITCH_TO_S11(sp)
+  ld sp , SWITCH_TO_SP(sp)
+  mv tp , a1
   jr ra
 ENDPROC(switch_to)
 
@@ -220,7 +223,6 @@ ENTRY(exception_handler_entry)
   SAVE_CONTEXT
 
   csrw CSR_SSCRATCH, x0
-
   /* Load the global pointer */
   .option push
   .option norelax
@@ -231,14 +233,14 @@ ENTRY(exception_handler_entry)
    * so that we can return to ret_from_exception
    * when interrupt_help complete.
    */
-  ld a0, PCB_KERNEL_SP(tp)
-  addi a0, a0, SWITCH_TO_SIZE
-  csrr a1, CSR_STVAL
-  csrr a2, CSR_SCAUSE
-  call interrupt_helper
-  la ra, ret_from_exception 
-  jr ra
   /* TODO: call interrupt_helper
    * note: don't forget to pass parameters for it.
    */
+  mv   a0, sp
+  addi a0, a0, SWITCH_TO_SIZE
+  csrr a1, CSR_STVAL
+  csrr a2, CSR_SCAUSE
+  call     interrupt_helper
+  la   ra, ret_from_exception 
+  jr   ra
 ENDPROC(exception_handler_entry)

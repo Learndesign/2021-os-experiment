@@ -44,6 +44,7 @@ uint64_t get_timer(void);
 uint64_t get_ticks(void);
 
 extern uint64_t get_time_base();
+extern uint64_t get_wall_time(uint32_t *time_elapsed);
 
 void latency(uint64_t time);
 extern list_head sleep_queue;

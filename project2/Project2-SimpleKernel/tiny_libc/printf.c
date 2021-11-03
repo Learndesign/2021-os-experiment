@@ -249,6 +249,7 @@ int printf(const char *fmt, ...)
 
     va_start(va, fmt);
     ret = vprintf(fmt, va);
+    sys_reflush();
     va_end(va);
 
     return ret;

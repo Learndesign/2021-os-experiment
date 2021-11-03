@@ -3,21 +3,18 @@
 #include <sys/syscall.h>
 #include <os/lock.h>
 
-int mthread_mutex_init(void *handle)
+int mthread_mutex_init(mthread_mutex_t *handle)
 {
     /* TODO: */
-    lock_create(handle);
     return 0;
 }
-int mthread_mutex_lock(void *handle)
+int mthread_mutex_lock(mthread_mutex_t *handle)
 {
     /* TODO: */
-    lock_jion(handle, USER_OP_LOCK);
     return 0;
 }
-int mthread_mutex_unlock(void *handle)
+int mthread_mutex_unlock(mthread_mutex_t *handle)
 {
     /* TODO: */
-    lock_jion(handle, USER_OP_UNLOCK);
     return 0;
 }
