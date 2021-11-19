@@ -1,0 +1,41 @@
+--- include/os/sched.h	2021-09-29 17:20:26.968530112 +0800
++++ include/os/sched.h	2021-10-14 20:48:40.124380618 +0800
+@@ -59,10 +59,16 @@ typedef enum {
+     TASK_BLOCKED,
+     TASK_RUNNING,
+     TASK_READY,
++    TASK_ZOMBIE,
+     TASK_EXITED,
+ } task_status_t;
+ 
+ typedef enum {
++    ENTER_ZOMBIE_ON_EXIT,
++    AUTO_CLEANUP_ON_EXIT,
++} spawn_mode_t;
++
++typedef enum {
+     KERNEL_PROCESS,
+     KERNEL_THREAD,
+     USER_PROCESS,
+@@ -94,8 +104,9 @@ typedef struct pcb
+     /* kernel/user thread/process */
+     task_type_t type;
+ 
+-    /* BLOCK | READY | RUNNING */
++    /* BLOCK | READY | RUNNING | ZOMBIE */
+     task_status_t status;
++    spawn_mode_t mode;
+ 
+     /* cursor position */
+     int cursor_x;
+@@ -114,8 +125,10 @@
+ 
+ /* current running task PCB */
+ extern pcb_t * volatile current_running;
++// extern pcb_t * volatile current_running[NR_CPUS];
+ extern pid_t process_id;
+ 
+ extern pcb_t pcb[NUM_MAX_TASK];
++// extern pcb_t kernel_pcb[NR_CPUS];
+ extern pcb_t pid0_pcb;
+ extern const ptr_t pid0_stack;

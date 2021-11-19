@@ -1,0 +1,24 @@
+{
+    "files.associations": {
+        "stdint.h": "c",
+        "syscall.h": "c",
+        "sbi.h": "c",
+        "list.h": "c",
+        "test.h": "c",
+        "cstdlib": "c",
+        "test3.h": "c",
+        "mailbox.h": "c",
+        "time.h": "c",
+        "sched.h": "c",
+        "screen.h": "c",
+        "mthread.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c",
+        "os.h": "c",
+        "string.h": "c",
+        "syscall_number.h": "c",
+        "lock.h": "c",
+        "typeinfo": "c",
+        "mm.h": "c"
+    }
+}
