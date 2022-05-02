@@ -1,0 +1,27 @@
+{
+    "files.associations": {
+        "xemacps_example.h": "c",
+        "list.h": "c",
+        "xemacps_hw.h": "c",
+        "sched.h": "c",
+        "xil_utils.h": "c",
+        "ioremap.h": "c",
+        "net.h": "c",
+        "screen.h": "c",
+        "syscall_number.h": "c",
+        "irq.h": "c",
+        "plic.h": "c",
+        "xemacps_bdring.h": "c",
+        "string.h": "c",
+        "lock.h": "c",
+        "mm.h": "c",
+        "fs.h": "c",
+        "time.h": "c",
+        "stdio.h": "c",
+        "sbi.h": "c",
+        "*.tcc": "c",
+        "typeinfo": "c",
+        "fs_tool.h": "c",
+        "os.h": "c"
+    }
+}
